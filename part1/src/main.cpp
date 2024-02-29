@@ -8,65 +8,75 @@
 #include "hardware/pwm.h"
 #include "hardware/irq.h"
 
+#include "moving_avg.hpp"
+#include <iostream>
 
-#include "controller.hpp"
+using rep_t = struct repeating_timer;
 
-inline float convert_adc_value (uint16_t adc_value, int number_of_bits) {
+struct ctrl_args
+{
+  MovingAvg *avg;
+};
+
+inline double convert_adc_value(uint16_t adc_value, int number_of_bits)
+{
   return adc_value * 3.3f / (1 << number_of_bits);
 }
- 
-int main(){
 
-  PID controller {0.01, 1, 0, 0.05  };
-  const uint LED_PIN =  PICO_DEFAULT_LED_PIN;
+bool flip_led(rep_t *t)
+{
+  gpio_put(PICO_DEFAULT_LED_PIN, !gpio_get(PICO_DEFAULT_LED_PIN));
+  gpio_ return true;
+}
+
+bool controller_loop(rep_t *t)
+{
+  ctrl_args *args = static_cast<ctrl_args *>(t->user_data);
+
+  auto avg = args->avg;
+  uint16_t adc_value = adc_read();
+  *avg << convert_adc_value(adc_value, 12);
+  std::cout << avg-- << std::endl;
+
+  return true;
+}
+
+int main()
+{
+  rep_t flip_internal_led;
+  rep_t controller_loop_timer;
+
+  MovingAvg avg(16);
+
+  const uint LED_PIN = PICO_DEFAULT_LED_PIN;
   const uint LAMP_PIN = 15;
   const uint ADC_PIN = 26; // GPIO26
   const uint ADC_NUMBER_OF_BITS = 12;
-   
+
   gpio_init(LED_PIN);
   gpio_set_dir(LED_PIN, GPIO_OUT);
-  gpio_init(LAMP_PIN);
-  gpio_set_dir(LAMP_PIN, GPIO_OUT);
 
   stdio_init_all();
 
   adc_init();
-     
+
   adc_gpio_init(ADC_PIN);
   adc_select_input(0);
-    
 
-  // Set up PWM for the LED
-  uint slice_num = pwm_gpio_to_slice_num(LAMP_PIN);
-  pwm_set_wrap(slice_num, 1 << ADC_NUMBER_OF_BITS);  // PWM range is 0-255
-  pwm_set_chan_level(slice_num, PWM_CHAN_A, 0);  // Start with LED off
-  pwm_gpio_init(LED_PIN);
+  gpio_set_function(LAMP_PIN, GPIO_FUNC_PWM);
 
-  unsigned int internal_led_state = 0;
-  while(true) {
-    // blink internal led
-    internal_led_state = internal_led_state == 0 ? 1 : 0;
-    gpio_put(LED_PIN, internal_led_state);
-    gpio_put(LAMP_PIN, internal_led_state);
-    
-    uint16_t adc_value = adc_read(); 
-    // printf("Current  ADC value read : 0x%03x bit /  Voltage :  %f V\n", adc_value, convert_adc_value(adc_value, 12));
+  pwm_config config = pwm_get_default_config();
 
-    float u = controller.compute_control(1.5f, convert_adc_value(static_cast<float>(adc_value), ADC_NUMBER_OF_BITS ) );
-    controller.housekeep(300.0f, static_cast<float>(adc_value));
-    controller.anti_integral_windup();
-    pwm_set_chan_level(slice_num, PWM_CHAN_A, u);
+  add_repeating_timer_ms(500, flip_led, NULL, &flip_internal_led);
 
-    // printf("Current Actuation : %f\n", u);
+  ctrl_args *args = new ctrl_args();
+  args->avg = &avg;
 
-    //float u = controller.compute_control(2000.0f, static_cast<float>(convert_adc_value(result, 12)));
+  add_repeating_timer_ms(100, controller_loop, args, &controller_loop_timer);
 
-     
-    //controller.housekeep(2000.0f, static_cast <float> (convert_adc_value(result, 12)));
-  
-    //printf("Raw value 0x%03x voltage : %f pwm %f V\n", result, u, static_cast<float>(convert_adc_value(result, 12)));
+  int counter = 0;
 
-    sleep_ms(10);
-
+  while (true)
+  {
   }
 }
