@@ -12,8 +12,7 @@ public:
     ~MovingAvg();
 
     void operator<<(double value);
-    double operator--();
-    double get_avg();
+    float get_avg();
 
     std::vector<double> values;
     unsigned int size;
