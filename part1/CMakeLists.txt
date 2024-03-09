@@ -6,6 +6,10 @@ include(../pico-sdk/pico_sdk_init.cmake)
 
 project(scdtr_part1)
 
+## have to set this before including pico_sdk_init
+## in order to have exceptions
+set(PICO_CXX_ENABLE_EXCEPTIONS 1)
+
 # initialize the Raspberry Pi Pico SDK
 pico_sdk_init()
 
