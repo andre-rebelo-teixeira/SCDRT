@@ -2,3 +2,7 @@
 	path = pico-sdk
 	url = https://github.com/raspberrypi/pico-sdk.git
 	branch = master
+[submodule "mpc1515"]
+	path = part1/include/pico-mcp2515
+	url = git@github.com:adamczykpiotr/pico-mcp2515.git
+	branch = main
