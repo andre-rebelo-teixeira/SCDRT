@@ -17,16 +17,11 @@ SOURCES += \
 
 HEADERS += \
     scdtr_interface.h \
-    json.hpp
 
 FORMS += \
     scdtr_interface.ui
 
-TRANSLATIONS += \
-    Interface_en_AS.ts
-
 CONFIG += lrelease
-CONFIG += embed_translations
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
