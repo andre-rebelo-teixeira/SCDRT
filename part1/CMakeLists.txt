@@ -23,7 +23,7 @@ add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIR})
 
 # Add pico_stdlib library which aggregates commonly used features
-target_link_libraries(${PROJECT_NAME} pico_stdlib hardware_pwm hardware_adc)
+target_link_libraries(${PROJECT_NAME} pico_stdlib hardware_pwm hardware_adc hardware_spi)
 
 pico_enable_stdio_usb(${PROJECT_NAME} 1)
 
