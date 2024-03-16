@@ -5,55 +5,56 @@
 
 #include "hardware/pwm.h"
 
-class LED
-{
+constexpr uint16_t POWER_DISSIPATED_mW = 108; // 108mW
+
+class LED {
 
 public:
-    LED(uint8_t pin, uint16_t pwm_freq = 60e3, bool phase_correct = false);
+  LED(uint8_t pin, uint16_t pwm_freq = 60e3, bool phase_correct = false);
 
-    ~LED() = default;
+  ~LED() = default;
 
-    void set_pwm(float duty_cycle);
-    void set_duty_cycle(float duty_cycle);
-    void set_luminosity_percentage(float percentage);
-    float get_duty_cycle();
+  void set_pwm(float duty_cycle);
+  void set_duty_cycle(float duty_cycle);
+  void set_luminosity_percentage(float percentage);
+  float get_duty_cycle();
+  float get_instanteous_power();
 
 private:
-    void change_pwm_status(bool status);
+  void change_pwm_status(bool status);
 
-    uint8_t pin;
-    uint8_t slice;
-    uint8_t channel;
+  uint8_t pin;
+  uint8_t slice;
+  uint8_t channel;
 
-    uint16_t pwm_freq; // 60kHz -> limit switch noise for LDR
-    uint16_t pwm_warp;
-    uint16_t level;
-    const uint16_t DAC_RANGE = 1 << 12;
+  uint16_t pwm_freq; // 60kHz -> limit switch noise for LDR
+  uint16_t pwm_warp;
+  uint16_t level;
+  const uint16_t DAC_RANGE = 1 << 12;
 
-    float pwm_value;
+  float pwm_value;
+  float duty_cycle;
 
-    bool phase_correct;
-    bool pwm_enabled = false;
+  bool phase_correct;
+  bool pwm_enabled = false;
 };
 
-inline void LED::set_duty_cycle(float duty_cycle)
-{
-    // set_pwm_range(static_cast<uint8_t>((float)DAC_RANGE * duty_cycle));
+inline float LED::get_instanteous_power() {
+  return duty_cycle * POWER_DISSIPATED_mW;
 }
 
-inline void LED::set_luminosity_percentage(float percentage)
-{
-    set_duty_cycle(percentage / 100.0);
+inline void LED::set_duty_cycle(float duty_cycle) {
+  // set_pwm_range(static_cast<uint8_t>((float)DAC_RANGE * duty_cycle));
 }
 
-inline float LED::get_duty_cycle()
-{
-    return pwm_value;
+inline void LED::set_luminosity_percentage(float percentage) {
+  set_duty_cycle(percentage / 100.0);
 }
 
-inline void LED::change_pwm_status(bool status)
-{
-    pwm_set_enabled(slice, status);
+inline float LED::get_duty_cycle() { return pwm_value; }
+
+inline void LED::change_pwm_status(bool status) {
+  pwm_set_enabled(slice, status);
 }
 
 #endif // __LED_HPP__

@@ -25,7 +25,6 @@ LED::LED(uint8_t pin, uint16_t pwm_freq, bool phase_correct) : pin(pin), pwm_fre
 
     pwm_set_phase_correct(slice, phase_correct);
 
-    set_pwm(1.0f);
 }
 
 /**

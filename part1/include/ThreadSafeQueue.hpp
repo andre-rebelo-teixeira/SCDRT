@@ -6,6 +6,7 @@
 
 // C++ library headers
 #include <queue>
+#include <utility>
 
 // Pico library headers
 #include "pico/lock_core.h"
@@ -43,7 +44,7 @@ public:
         }
     }
 
-    inline bool pop(T &item)
+    inline bool pop(T& item)
     {
         if (mutex_try_enter(&mutex, &proc))
         {
@@ -53,10 +54,10 @@ public:
                 return false;
             }
 
-            *item = q.front();
+            item  = q.front();
             q.pop();
             mutex_exit(&mutex);
-            return true;
+            return true; 
         }
         else
         {
@@ -64,7 +65,7 @@ public:
             {
                 l->log(Logger::LogLevel::ERROR, "Failed to take ownership of the mutex");
             }
-            return false;
+            return  false;
         }
     }
 
@@ -72,7 +73,7 @@ private:
     std::queue<T> q;
     mutex_t mutex;
     Logger *l;
-    int32_t proc;
+    uint32_t proc;
 };
 
 #endif // __FIFO_HPP__
