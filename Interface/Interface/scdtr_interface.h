@@ -16,6 +16,7 @@
 #include <QTextCodec>
 #include <QMainWindow>
 #include <QStringList>
+#include <QSerialPort>
 #include <QTextCharFormat>
 
 
@@ -51,34 +52,29 @@ private slots:
 
     void on_plotjuggler_check_box_clicked(bool checked);
 
-    void on_send_command_clicked();
-
     void on_command_in_currentTextChanged(const QString &arg1);
+
+    void on_send_cmd_released();
 
 private:
 
     // functions
-    void handleRead(const error_code& error,
-                    std::size_t bytes_transferred,
-                    char* data);
-
-    bool connect_to_usb(QString dev_name );
-    void startAsyncRead();
+    void handleRead(QString msg_data);
 
     void sendToPlotjuggler(QString msg);
 
-    void io_poll();
     void send_presence();
 
     void initialize_command_in();
+    void read();
+
 
     // variables
 
     QTimer *read_timer;
     QTimer *presence_timer;
-    boost::asio::io_service io;
-    boost::asio::serial_port *serial;
 
+    QSerialPort * serial_port;
     QVector <QString> message_vector;
     QString last_message;
 
@@ -89,8 +85,6 @@ private:
     bool show_messages = true;
 
     QMap <QString, QString> desired_commands;
-
-    char data[1024]; // Buffer to hold the incoming data
 
 };
 #endif // SCDTR_INTERFACE_H

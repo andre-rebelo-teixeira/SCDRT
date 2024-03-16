@@ -75,25 +75,8 @@
           <string>Tab 2</string>
          </attribute>
          <layout class="QGridLayout" name="gridLayout">
-          <item row="1" column="1">
-           <widget class="QPushButton" name="send_command">
-            <property name="text">
-             <string>Send message</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="0">
-           <widget class="QLabel" name="label">
-            <property name="text">
-             <string>Commands to send:</string>
-            </property>
-           </widget>
-          </item>
           <item row="5" column="0">
            <widget class="QPlainTextEdit" name="command_out"/>
-          </item>
-          <item row="1" column="0">
-           <widget class="QComboBox" name="command_in"/>
           </item>
           <item row="4" column="0">
            <layout class="QGridLayout" name="gridLayout_2">
@@ -122,10 +105,27 @@
             </item>
            </layout>
           </item>
+          <item row="1" column="0">
+           <widget class="QComboBox" name="command_in"/>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>Commands to send:</string>
+            </property>
+           </widget>
+          </item>
           <item row="2" column="0">
            <widget class="QLabel" name="comment_label">
             <property name="text">
              <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QPushButton" name="send_cmd">
+            <property name="text">
+             <string>send_cmd</string>
             </property>
            </widget>
           </item>
