@@ -78,3 +78,4 @@ moc_predefs.h
 qmake_qmake_qm_files.qrc
 Interface_en_AS.ts
 .qtc_clangd/
+*.csv

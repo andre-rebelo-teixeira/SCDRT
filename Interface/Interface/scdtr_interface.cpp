@@ -251,8 +251,6 @@ void SCDTR_Interface::on_send_cmd_released() {
   auto msg_for_serial_port = com.toStdString().c_str();
   serial_port->write(msg_for_serial_port);
 
-  std::cout << com.toStdString() << " " << com.toStdString().size()
-            << std::endl;
 }
 
 void SCDTR_Interface::on_command_in_currentTextChanged(const QString &arg1) {
@@ -261,8 +259,6 @@ void SCDTR_Interface::on_command_in_currentTextChanged(const QString &arg1) {
 
 void SCDTR_Interface::read() {
   auto data = serial_port->readAll();
-
-  std::cout << data.toStdString() << std::endl;
 
   handleRead(data);
 }
@@ -317,7 +313,6 @@ void SCDTR_Interface::save_to_array(QString msg) {
     QString signal_name = split_string[1];
     QString signal_value = split_string[2];
 
-    std::cout << "clock.to MS" << clock.toMSecsSinceEpoch() << std::endl;
 
     auto pair = qMakePair( clock.toMSecsSinceEpoch() - start_time, signal_value.toDouble());
 
