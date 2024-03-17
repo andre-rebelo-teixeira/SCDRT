@@ -279,7 +279,8 @@ inline void PID::set_anti_windup(bool enable) {
 }
 inline void PID::set_ff_enable(bool enable) { this->ff_enable = enable; }
 inline void PID::set_active(bool active) { this->active = active; }
-inline void PID::set_reference(float reference) { this->ref = reference; }
+inline void PID::set_reference(float reference) { this->ref = reference;
+std::cout << "[INFO] : inside PID-> SET REF" << std::endl; }
 inline void PID::set_occupancy(bool occupancy) { this->occupancy = occupancy; }
 
 // * getters
