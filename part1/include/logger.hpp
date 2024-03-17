@@ -10,12 +10,10 @@
 
 #include "pico/mutex.h"
 
-// TODO :  Include rpi pico id into the log message for when multiple picos are
-// being used at the same time
 class Logger // Used to send messages from the pico to the Computer over serial
 {
 public:
-  Logger() {
+  Logger(uint16_t pico_idx) : pico_idx(pico_idx) {
     // This is to make sure stdio is thread safe
   };
 
@@ -34,6 +32,7 @@ public:
 
 private:
   std::string get_log_level(LogLevel level);
+  uint16_t pico_idx;
 };
 
 inline std::string Logger::get_log_level(LogLevel level) {
@@ -54,13 +53,13 @@ inline std::string Logger::get_log_level(LogLevel level) {
 }
 
 inline void Logger::log(LogLevel level, std::string msg) {
-  std::string log_level = get_log_level(level);
+  std::string log_level = get_log_level(level) + " " + std::to_string(pico_idx);
   msg = log_level + " : " + msg;
   std::cout << msg << std::endl;
 }
 
 inline void Logger::log(LogLevel level, std::string signal_name, float value) {
-  std::string log_level = get_log_level(level);
+  std::string log_level = get_log_level(level) + " " + std::to_string(pico_idx);
   std::string msg =
       log_level + " : " + signal_name + " : " + std::to_string(value);
   std::cout << msg << std::endl;
