@@ -31,14 +31,16 @@ class CommandInterface {
 public:
   CommandInterface() = default;
   ~CommandInterface() = default;
-  virtual std::string handle(PID *pid, LED *led){};
+  virtual std::string handle(PID *pid, LED *led){
+    std::cout << "CommandInterface::handle" << std::endl;
+  };
 };
 
 class MonitorCmd : public CommandInterface {
 public:
   MonitorCmd(SYSTEM_MONITOR monitor, std::string lum)
       : CommandInterface(), monitor(monitor), lum(lum) {}
-  std::string handle(PID *pid, LED *led) override;
+  virtual std::string handle(PID *pid, LED *led) ;
 
 private:
   SYSTEM_MONITOR monitor;
@@ -50,7 +52,8 @@ public:
   LuminaireConfig(CONFIG cfg, TYPE type, std::string val, std::string lum)
       : CommandInterface(), cfg(cfg), type(type), val(val), lum(lum) {}
 
-  std::string handle(PID *pid, LED *led) override;
+
+  virtual  std::string handle(PID *pid, LED *led) ;
 
 private:
   CONFIG cfg;
@@ -71,7 +74,7 @@ public:
 
   ~StreamCmd() = default;
 
-  std::string handle(PID *pid, LED *led) override;
+  virtual std::string handle(PID *pid, LED *led);
 
 private:
   STREAM stream;

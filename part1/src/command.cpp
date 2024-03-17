@@ -4,11 +4,12 @@
 #include <iostream>
 
 std::string LuminaireConfig::handle(PID *pid, LED *led) {
+
+  std::cout << "[INFO] : Handling luminaire config" << std::endl;
   if (pid == nullptr || led == nullptr) {
     return "";
   }
 
-  std::cout << "[INFO] : Handling luminaire config" << std::endl;
   switch (cfg) {
   case CONFIG::SET:
     this->setters(pid, led);
