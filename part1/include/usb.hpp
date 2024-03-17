@@ -51,7 +51,7 @@ public:
      * 
      * @return std::vector<CommandInterface> vector of commands to be executed
     */
-    inline std::vector <CommandInterface> get_usb_commands() {
+    inline std::vector <std::shared_ptr<CommandInterface >> get_usb_commands() {
         return usb_commands;
     }
 
@@ -69,7 +69,7 @@ private:
     Logger *l;
     msg unfinished_msg;
     unsigned int num_max_reads;
-    std::vector<CommandInterface>  usb_commands;
+    std::vector<std::shared_ptr<CommandInterface>>  usb_commands;
 
 
     /**
