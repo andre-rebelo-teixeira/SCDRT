@@ -23,12 +23,16 @@ public:
         q = std::queue<T>();
     }
 
+    void set_logger(Logger *l)
+    {
+        this->l = l;
+    }
+
     ~ThreadSafeQueue() = default;
 
-    inline bool push(T value)
+    bool push(T value)
     {
-        // Try to take ownership of the mutex for 2ms outherwise give up
-        if (mutex_try_enter(&mutex, &proc))
+        if (mutex_enter_timeout_ms(&mutex, 2))
         {
             q.push(value);
             mutex_exit(&mutex);
@@ -44,9 +48,9 @@ public:
         }
     }
 
-    inline bool pop(T& item)
+    bool pop(T& item)
     {
-        if (mutex_try_enter(&mutex, &proc))
+        if (mutex_enter_timeout_ms(&mutex, 2))
         {
             if (q.empty())
             {
@@ -73,7 +77,6 @@ private:
     std::queue<T> q;
     mutex_t mutex;
     Logger *l;
-    uint32_t proc;
 };
 
 #endif // __FIFO_HPP__
