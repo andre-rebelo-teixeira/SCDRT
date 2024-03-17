@@ -2,6 +2,7 @@
 #define __CAN__HPP__
 
 #include "mcp2515.h"
+#include "can.h"
 
 #include "hardware/flash.h" // for flasg_get_unique_id -> will be used to assign an Id to the pico that will then encode the CAN device ID N
 
@@ -17,15 +18,14 @@ enum class ERROR
     ERROR_HARDWARE
 };
 
-typedef std::variant<struct can_frame, ERROR> can_msg_t;
 
 class CanCom
 {
 public:
-    CanCom(uint16_t pin, uint16_t CSn, uint16_t Tx, uint16_t RX, uint16_t SCK, uint32_t CLK_SPEED = 1000000);
+    CanCom(uint16_t pin, uint8_t CSn, uint8_t Tx, uint8_t RX, uint8_t SCK, uint32_t CLK_SPEED = 1000000);
     ~CanCom() = default;
 
-    can_msg_t read_msg();
+    ERROR read_msg();
 
     ERROR send_msg(uint16_t msg_id, uint8_t dlc, std::vector<uint8_t> data);
     ERROR send_msg(uint32_t msg_ssid, uint8_t dlc, std::vector<uint8_t> data);
@@ -40,6 +40,12 @@ public:
 
     void set_data_available();
 
+    inline struct can_frame get_message() {
+        return msg;
+    
+    }
+
+    MCP2515 can0;
 private:
     uint32_t create_msg_ssid(uint16_t msg_id);
     uint16_t get_msg_id(uint32_t ssid);
@@ -47,7 +53,6 @@ private:
     bool data_available = false;
     struct can_frame msg;
 
-    MCP2515 can0;
 
     uint16_t pico_id;
 
