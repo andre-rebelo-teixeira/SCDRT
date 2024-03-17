@@ -8,6 +8,8 @@
 #include <boost/asio.hpp>
 
 #include <QMap>
+#include <QPair>
+#include <QFile>
 #include <QTime>
 #include <QTimer>
 #include <QString>
@@ -56,6 +58,8 @@ private slots:
 
     void on_send_cmd_released();
 
+    void on_serial_port_connect_clicked(bool checked);
+
 private:
 
     // functions
@@ -68,7 +72,9 @@ private:
     void initialize_command_in();
     void read();
 
+    void save_to_array(QString msg);
 
+    void write_to_csv();
     // variables
 
     QTimer *read_timer;
@@ -85,6 +91,10 @@ private:
     bool show_messages = true;
 
     QMap <QString, QString> desired_commands;
+
+    qint64 start_time;
+
+    QMap <QString, QVector <QPair <double, qint64>>> signal_map;
 
 };
 #endif // SCDTR_INTERFACE_H

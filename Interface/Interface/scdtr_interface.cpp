@@ -7,19 +7,7 @@ SCDTR_Interface::SCDTR_Interface(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::SCDTR_Interface) {
   ui->setupUi(this);
 
-  serial_port = new QSerialPort();
-  connect(serial_port, &QSerialPort::readyRead, this, &SCDTR_Interface::read);
-
-  serial_port->setPortName("/dev/ttyACM0");
-  serial_port->setBaudRate(115200);
-
-  auto output = serial_port->open(QIODevice::ReadWrite);
-  if (!output) {
-    std::cout << "Serial port did not open find out why " << std::endl;
-    exit(EXIT_FAILURE);
-  }
-
-  // this->ui->console->setReadOnly(true);
+  serial_port = new QSerialPort();   // this->ui->console->setReadOnly(true);
   this->ui->console->document()->setMaximumBlockCount(200);
 
   this->ui->command_out->setReadOnly(true);
@@ -32,11 +20,50 @@ SCDTR_Interface::SCDTR_Interface(QWidget *parent)
   this->initialize_command_in();
 }
 
-SCDTR_Interface::~SCDTR_Interface() { delete ui; }
+SCDTR_Interface::~SCDTR_Interface() {
+    write_to_csv();
+    delete ui;
+}
 
 // private functions
 
+void SCDTR_Interface::write_to_csv() {
+
+    auto clock = QDateTime::currentDateTime();
+    QString date = clock.date().toString();
+
+    foreach (auto const & sig_name , signal_map.keys()) {
+        auto values = signal_map[sig_name];
+
+        QFile file (date + sig_name +  ".csv");
+        if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            std::cout << "Error creating file for " << sig_name.toStdString() << std::endl;
+            continue;
+        }
+
+        QTextStream f_(&file);
+
+        f_ << "timestamp , " << sig_name << '\n';
+
+        foreach(auto const & val , values) {
+            f_ << val.first << "," << val.second << '\n';
+        }
+
+        file.close();
+
+    }
+}
+
 void SCDTR_Interface::initialize_command_in() {
+    this->ui->serial_input->addItem("ttyACM0");
+    this->ui->serial_input->addItem("ttyACM1");
+    this->ui->serial_input->addItem("ttyACM2");
+    this->ui->serial_input->addItem("ttyACM3");
+    this->ui->serial_input->addItem("ttyACM4");
+
+
+
+
   this->desired_commands["d <i> <val>"] =
       "Set directly the duty cycle of luminaire i";
   this->desired_commands["g d <i>"] = "Get current duty cycle of luminaire i";
@@ -122,6 +149,8 @@ void SCDTR_Interface::handleRead(QString msg_data) {
               QTextCodec::codecForName("UTF-8")->toUnicode(msg.toUtf8()));
         }
 
+        this->save_to_array(msg);
+
         // this->ui->console>
       } else if (msg.contains("[WARNING]")) {
         format_.setForeground(Qt::yellow);
@@ -135,6 +164,13 @@ void SCDTR_Interface::handleRead(QString msg_data) {
         this->ui->console->append(msg);
       } else if (msg.contains("[RESPONSE]")) {
         this->ui->command_out->appendPlainText(msg);
+      }
+      else if (msg.contains("[VALUE]")) {
+        format_.setForeground(Qt::green);
+        if (this->connect_to_plotjuggler) {
+          this->sendToPlotjuggler(
+              QTextCodec::codecForName("UTF-8")->toUnicode(msg.toUtf8()));
+        }
       }
     }
   }
@@ -210,7 +246,7 @@ void SCDTR_Interface::on_send_cmd_released() {
     com.replace("<x>", arg);
   }
 
-  com += '/';
+  com += '\n';
 
   auto msg_for_serial_port = com.toStdString().c_str();
   serial_port->write(msg_for_serial_port);
@@ -230,3 +266,66 @@ void SCDTR_Interface::read() {
 
   handleRead(data);
 }
+
+void SCDTR_Interface::on_serial_port_connect_clicked(bool checked)
+{
+    if (checked) {
+        if (serial_port->isOpen()) {
+            serial_port->close();
+        }
+
+
+        auto clock = QDateTime::currentDateTime();
+        this->start_time = clock.toMSecsSinceEpoch();
+        connect(serial_port, &QSerialPort::readyRead, this, &SCDTR_Interface::read);
+
+        QString portname = "/dev/";
+        QString input_value = this->ui->serial_input->currentText();
+
+        if (input_value == "") {
+            input_value = "ttyACM0";
+        }
+
+        portname += input_value;
+        serial_port->setPortName(portname);
+
+        serial_port->setBaudRate(115200);
+
+        auto output = serial_port->open(QIODevice::ReadWrite);
+        if (!output) {
+            std::cout << "Serial port did not open find out why " << std::endl;
+            exit(EXIT_FAILURE);
+        }
+    }
+    else {
+        if (serial_port->isOpen()) {
+            serial_port->close();
+        }
+        write_to_csv();
+        signal_map.clear();
+    }
+
+}
+
+void SCDTR_Interface::save_to_array(QString msg) {
+    auto clock = QDateTime::currentDateTime();
+    QStringList split_string =  msg.split(":");
+    if (split_string.size() != 3) {
+        return;
+    }
+
+    QString signal_name = split_string[1];
+    QString signal_value = split_string[2];
+
+    std::cout << "clock.to MS" << clock.toMSecsSinceEpoch() << std::endl;
+
+    auto pair = qMakePair( clock.toMSecsSinceEpoch() - start_time, signal_value.toDouble());
+
+    if (signal_map.contains(signal_name)) {
+        signal_map[signal_name].push_back(pair);
+    } else {
+        signal_map[signal_name] = QVector<QPair<double, qint64>>();
+        signal_map[signal_name].push_back(pair);
+    }
+}
+
