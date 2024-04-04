@@ -52,9 +52,6 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="0">
-           <widget class="QTextEdit" name="console"/>
-          </item>
           <item row="2" column="0">
            <widget class="QCheckBox" name="messages_check_box">
             <property name="text">
@@ -67,6 +64,9 @@
              <bool>false</bool>
             </property>
            </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QTextEdit" name="console"/>
           </item>
           <item row="5" column="0">
            <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -82,15 +82,43 @@
                </size>
               </property>
               <property name="text">
-               <string>Connect to Serial port /dev/</string>
+               <string>UDP server details</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QComboBox" name="serial_input"/>
+             <layout class="QGridLayout" name="gridLayout_4">
+              <item row="1" column="0">
+               <widget class="QComboBox" name="udp_server_ip_combo"/>
+              </item>
+              <item row="1" column="1">
+               <widget class="QComboBox" name="udp_server_port_combo">
+                <property name="maximumSize">
+                 <size>
+                  <width>200</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="udp_server_ip_label">
+                <property name="text">
+                 <string>IP</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QLabel" name="udp_server_port">
+                <property name="text">
+                 <string>PORT</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
             <item>
-             <widget class="QCheckBox" name="serial_port_connect">
+             <widget class="QCheckBox" name="udp_server_connect">
               <property name="maximumSize">
                <size>
                 <width>100</width>

@@ -17,7 +17,15 @@ SCDTR_Interface::SCDTR_Interface(QWidget *parent)
   connect(this->presence_timer, &QTimer::timeout, this,
           &SCDTR_Interface::send_presence);
 
+  this->udp_server_timer = new QTimer();
+  connect(this->udp_server_timer, &QTimer::timeout, this,
+          &SCDTR_Interface::send_udp_server_presence);
+
   this->initialize_command_in();
+  this->ui->udp_server_ip_combo->setEditable(true);
+  this->ui->udp_server_port_combo->setEditable(true);
+
+  _interfaceSocket = new QUdpSocket();
 }
 
 SCDTR_Interface::~SCDTR_Interface() {
@@ -55,11 +63,8 @@ void SCDTR_Interface::write_to_csv() {
 }
 
 void SCDTR_Interface::initialize_command_in() {
-    this->ui->serial_input->addItem("ttyACM0");
-    this->ui->serial_input->addItem("ttyACM1");
-    this->ui->serial_input->addItem("ttyACM2");
-    this->ui->serial_input->addItem("ttyACM3");
-    this->ui->serial_input->addItem("ttyACM4");
+    this->ui->udp_server_ip_combo->addItem("127.0.0.1");
+    this->ui->udp_server_port_combo->addItem("58000");
 
 
 
@@ -104,6 +109,17 @@ void SCDTR_Interface::initialize_command_in() {
   this->desired_commands["g f <i>"] = "Get the average flicker error on desk "
                                       "<i> since the last system restart.";
 
+  this->desired_commands["g O <i>"] = "<val> is a number that expresses the lower bound of illuminance for the occupied state on the desk <i> in lux.";
+  this->desired_commands["O <i> <val>"] = "Set lower bound on illumincance at state desk <i>";
+      this->desired_commands["g U <i>"] = "Get lower bound for unoccupied desk <i>";
+      this->desired_commands["U <i> <val>"] =  "Set lower bound on illuminance for the unoccupied state at dest <i>";
+  this->desired_commands["g L <i>"] = "Get energy current illuminance lower bound at desk <i>";
+      this->desired_commands["g c <i>"] = "<val> is the number that expresses current cost of energy";
+      this->desired_commands["c <i> <val>"]  = "<val> is the number that expresss current cost in energy";
+  this->desired_commands["r"] = "Reset all values and recalibrate";
+
+
+
   auto keys = this->desired_commands.keys();
   for (auto const &com : keys) {
     this->ui->command_in->addItem(com);
@@ -122,60 +138,44 @@ void SCDTR_Interface::send_presence() {
                          strlen(send_string.c_str()));
 }
 
-void SCDTR_Interface::handleRead(QString msg_data) {
+void SCDTR_Interface::handleRead(QString msg) {
   QTextCharFormat format_;
 
-  for (auto const ch : msg_data) {
-    if (ch != '\n') {
-      last_message.append(ch);
-    } else {
-      message_vector.append(last_message);
-      last_message.clear();
+    std::cout << msg.toStdString()<< std::endl;
+    this->ui->console->moveCursor(QTextCursor::End);
+
+    if (msg.contains("[INFO]")) {
+    format_.setForeground(Qt::gray);
+
+    this->ui->console->setCurrentCharFormat(format_);
+    this->ui->console->append(msg);
+
+    if (this->connect_to_plotjuggler) {
+        this->sendToPlotjuggler(
+        QTextCodec::codecForName("UTF-8")->toUnicode(msg.toUtf8()));
     }
-  }
 
-  if (this->show_messages) {
-    for (auto const &msg : message_vector) {
+    this->save_to_array(msg);
 
-      this->ui->console->moveCursor(QTextCursor::End);
-      if (msg.contains("[INFO]")) {
-        format_.setForeground(Qt::gray);
-
-        this->ui->console->setCurrentCharFormat(format_);
-        this->ui->console->append(msg);
-
-        if (this->connect_to_plotjuggler) {
-          this->sendToPlotjuggler(
-              QTextCodec::codecForName("UTF-8")->toUnicode(msg.toUtf8()));
-        }
-
-        this->save_to_array(msg);
-
-        // this->ui->console>
-      } else if (msg.contains("[WARNING]")) {
+    } else if (msg.contains("[WARNING]")) {
         format_.setForeground(Qt::yellow);
-
         this->ui->console->setCurrentCharFormat(format_);
         this->ui->console->append(msg);
-      } else if (msg.contains("[ERROR]")) {
+    } else if (msg.contains("[ERROR]")) {
+
         format_.setForeground(Qt::red);
-
         this->ui->console->setCurrentCharFormat(format_);
         this->ui->console->append(msg);
-      } else if (msg.contains("[RESPONSE]")) {
+    } else if (msg.contains("[RESPONSE]")) {
         this->ui->command_out->appendPlainText(msg);
-      }
-      else if (msg.contains("[VALUE]")) {
+    }
+    else if (msg.contains("[VALUE]")) {
         format_.setForeground(Qt::green);
         if (this->connect_to_plotjuggler) {
-          this->sendToPlotjuggler(
-              QTextCodec::codecForName("UTF-8")->toUnicode(msg.toUtf8()));
+            this->sendToPlotjuggler(
+            QTextCodec::codecForName("UTF-8")->toUnicode(msg.toUtf8()));
         }
-      }
     }
-  }
-
-  message_vector.clear();
 }
 
 void SCDTR_Interface::sendToPlotjuggler(QString msg) {
@@ -262,45 +262,28 @@ void SCDTR_Interface::read() {
 
   handleRead(data);
 }
-
+/*
 void SCDTR_Interface::on_serial_port_connect_clicked(bool checked)
-{
+{}*/
+
+void SCDTR_Interface::on_udp_server_connect_clicked(bool checked) {
+
     if (checked) {
-        if (serial_port->isOpen()) {
-            serial_port->close();
-        }
+        QString udp_ip = this->ui->udp_server_ip_combo->currentText();
+        QString udp_port = this->ui->udp_server_port_combo->currentText();
 
+        server_addr = QHostAddress(udp_ip);
+        server_port = udp_port.toUShort();
 
-        auto clock = QDateTime::currentDateTime();
-        this->start_time = clock.toMSecsSinceEpoch();
-        connect(serial_port, &QSerialPort::readyRead, this, &SCDTR_Interface::read);
+        _interfaceSocket->connectToHost(QHostAddress::LocalHost, 0);
+        connect(_interfaceSocket, &QUdpSocket::readyRead,
+                this, &SCDTR_Interface::read_from_udp_socket);
 
-        QString portname = "/dev/";
-        QString input_value = this->ui->serial_input->currentText();
-
-        if (input_value == "") {
-            input_value = "ttyACM0";
-        }
-
-        portname += input_value;
-        serial_port->setPortName(portname);
-
-        serial_port->setBaudRate(115200);
-
-        auto output = serial_port->open(QIODevice::ReadWrite);
-        if (!output) {
-            std::cout << "Serial port did not open find out why " << std::endl;
-            exit(EXIT_FAILURE);
-        }
+        udp_server_timer->start(std::chrono::seconds(1));
+    }  else  {
+        this->_interfaceSocket->disconnectFromHost();
+        this->udp_server_timer->stop();
     }
-    else {
-        if (serial_port->isOpen()) {
-            serial_port->close();
-        }
-        write_to_csv();
-        signal_map.clear();
-    }
-
 }
 
 void SCDTR_Interface::save_to_array(QString msg) {
@@ -313,14 +296,46 @@ void SCDTR_Interface::save_to_array(QString msg) {
     QString signal_name = split_string[1];
     QString signal_value = split_string[2];
 
-
     auto pair = qMakePair( clock.toMSecsSinceEpoch() - start_time, signal_value.toDouble());
 
     if (signal_map.contains(signal_name)) {
         signal_map[signal_name].push_back(pair);
     } else {
-        signal_map[signal_name] = QVector<QPair<double, qint64>>();
+        signal_map[signal_name] = QVector<QPair<qint64, double>>();
         signal_map[signal_name].push_back(pair);
     }
 }
 
+void SCDTR_Interface::read_from_udp_socket(){
+
+    while(_interfaceSocket->hasPendingDatagrams()) {
+        QByteArray datagram;
+        datagram.resize(_interfaceSocket->pendingDatagramSize());
+        QHostAddress sender;
+        quint16 senderport;
+
+        _interfaceSocket->readDatagram(datagram.data(), datagram.size(), &sender, &senderport);
+
+        last_msg +=  datagram.toStdString();
+
+        // split by the \n
+        std::size_t pos = 0;
+        while ((pos = last_msg.find("\n")) != std::string::npos) {
+            std::string token_ = last_msg.substr(0, pos);
+            last_msg.erase(0, pos + 1);
+
+            // Receive a full message -> handle it
+            handleRead(QString::fromStdString(token_));
+        }
+    }
+}
+
+void SCDTR_Interface::send_udp_server_presence() {
+    std::cout << "Presence timer" << std::endl;
+    if (_interfaceSocket == NULL) {
+        return;
+    }
+
+    _interfaceSocket->writeDatagram("Presence", server_addr, server_port);
+    return;
+}

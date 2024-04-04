@@ -2,7 +2,6 @@
 	path = pico-sdk
 	url = https://github.com/raspberrypi/pico-sdk.git
 	branch = master
-[submodule "json"]
+[submodule "Interface/Interface/json"]
 	path = Interface/Interface/json
 	url = git@github.com:nlohmann/json.git
-	branch = master
